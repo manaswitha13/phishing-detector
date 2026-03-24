@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://your-railway-url.up.railway.app";
 
 // ✅ Load token if already logged in
 let authToken = localStorage.getItem("token") || "";
@@ -68,10 +68,14 @@ async function scan(){
 
     const data = await res.json();
 
+    if(res.status !== 200){
+        alert(data.message);
+        return;
+    }
+
     document.getElementById("result").innerHTML =
         `<h2>${data.label}</h2><p>Score: ${data.score}</p>`;
 }
-
 // History
 async function loadHistory(){
     const res = await fetch(BASE_URL + "/history",{
