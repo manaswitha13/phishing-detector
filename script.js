@@ -1,15 +1,17 @@
 const BASE_URL = "http://localhost:5000";
-let authToken = "";
+
+// ✅ Load token if already logged in
+let authToken = localStorage.getItem("token") || "";
 
 // Signup
 async function signup() {
-    const username = username.value;
-    const password = password.value;
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
 
     const res = await fetch(BASE_URL + "/signup", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({username,password})
+        body: JSON.stringify({ username, password })
     });
 
     const data = await res.json();
@@ -24,17 +26,21 @@ async function login() {
     const res = await fetch(BASE_URL + "/login", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({username,password})
+        body: JSON.stringify({ username, password })
     });
 
     const data = await res.json();
 
-    if(res.status===200){
+    if(res.status === 200){
         authToken = data.token;
+
+        // ✅ store token (important for multiple users)
+        localStorage.setItem("token", authToken);
+
         alert("Login success");
 
-        document.getElementById("auth").style.display="none";
-        document.getElementById("app").style.display="block";
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("app").style.display = "block";
     } else {
         alert(data.message);
     }
@@ -42,7 +48,8 @@ async function login() {
 
 // Logout
 function logout(){
-    authToken="";
+    localStorage.removeItem("token");  // ✅ clear properly
+    authToken = "";
     location.reload();
 }
 
@@ -54,21 +61,21 @@ async function scan(){
         method:"POST",
         headers:{
             "Content-Type":"application/json",
-            "Authorization":authToken
+            "Authorization": authToken
         },
-        body: JSON.stringify({url})
+        body: JSON.stringify({ url })
     });
 
     const data = await res.json();
 
     document.getElementById("result").innerHTML =
-        `<h2>${data.label}</h2><p>${data.score}</p>`;
+        `<h2>${data.label}</h2><p>Score: ${data.score}</p>`;
 }
 
 // History
 async function loadHistory(){
-    const res = await fetch(BASE_URL+"/history",{
-        headers:{"Authorization":authToken}
+    const res = await fetch(BASE_URL + "/history",{
+        headers:{"Authorization": authToken}
     });
 
     const data = await res.json();
@@ -92,3 +99,11 @@ async function loadHistory(){
         }
     });
 }
+
+// ✅ Auto login if token exists
+window.onload = () => {
+    if(authToken){
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("app").style.display = "block";
+    }
+};
