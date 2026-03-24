@@ -8,10 +8,12 @@ import re
 app = Flask(__name__)
 CORS(app)
 
-client = MongoClient("mongodb://localhost:27017/")
+# ✅ MongoDB Atlas connection (UPDATED)
+client = MongoClient("mongodb+srv://sunkumanaswitha2006_db_user:Manu%401013@cluster0.dpzhnn5.mongodb.net/phishing_db?retryWrites=true&w=majority")
 db = client["phishing_db"]
 users = db["users"]
 scans = db["scans"]
+
 
 # 🔍 Detection
 def detect_phishing(url):
@@ -59,7 +61,7 @@ def signup():
     users.insert_one({
         "username": data["username"],
         "password": generate_password_hash(data["password"]),
-        "tokens": []   # ✅ multiple sessions support
+        "tokens": []
     })
 
     return jsonify({"message": "Signup successful"})
@@ -74,7 +76,6 @@ def login():
     if user and check_password_hash(user["password"], data["password"]):
         token = str(uuid.uuid4())
 
-        # ✅ Add token instead of replacing
         users.update_one(
             {"username": data["username"]},
             {"$push": {"tokens": token}}
@@ -94,7 +95,7 @@ def login():
 def scan():
     token = request.headers.get("Authorization")
 
-    user = users.find_one({"tokens": token})  # ✅ check in array
+    user = users.find_one({"tokens": token})
 
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
@@ -125,7 +126,7 @@ def history():
     return jsonify(data)
 
 
-# 🚪 Logout (NEW)
+# 🚪 Logout
 @app.route("/logout", methods=["POST"])
 def logout():
     token = request.headers.get("Authorization")
