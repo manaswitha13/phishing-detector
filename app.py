@@ -47,23 +47,25 @@ def detect_phishing(url):
 
     return {"score": score, "label": label, "reasons": reasons}
 
-# Signup
+
+# 🔐 Signup
 @app.route("/signup", methods=["POST"])
 def signup():
     data = request.get_json()
 
     if users.find_one({"username": data["username"]}):
-        return jsonify({"message": "User exists"}), 400
+        return jsonify({"message": "User already exists"}), 400
 
     users.insert_one({
         "username": data["username"],
         "password": generate_password_hash(data["password"]),
-        "token": ""
+        "tokens": []   # ✅ multiple sessions support
     })
 
     return jsonify({"message": "Signup successful"})
 
-# Login
+
+# 🔑 Login
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -72,20 +74,27 @@ def login():
     if user and check_password_hash(user["password"], data["password"]):
         token = str(uuid.uuid4())
 
+        # ✅ Add token instead of replacing
         users.update_one(
             {"username": data["username"]},
-            {"$set": {"token": token}}
+            {"$push": {"tokens": token}}
         )
 
-        return jsonify({"token": token})
+        return jsonify({
+            "message": "Login successful",
+            "token": token,
+            "username": data["username"]
+        })
 
     return jsonify({"message": "Invalid credentials"}), 401
 
-# Scan
+
+# 🔍 Scan
 @app.route("/scan", methods=["POST"])
 def scan():
     token = request.headers.get("Authorization")
-    user = users.find_one({"token": token})
+
+    user = users.find_one({"tokens": token})  # ✅ check in array
 
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
@@ -101,17 +110,33 @@ def scan():
 
     return jsonify(result)
 
-# History
+
+# 📜 History
 @app.route("/history", methods=["GET"])
 def history():
     token = request.headers.get("Authorization")
-    user = users.find_one({"token": token})
+
+    user = users.find_one({"tokens": token})
 
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
 
     data = list(scans.find({"user": user["username"]}, {"_id": 0}))
     return jsonify(data)
+
+
+# 🚪 Logout (NEW)
+@app.route("/logout", methods=["POST"])
+def logout():
+    token = request.headers.get("Authorization")
+
+    users.update_one(
+        {"tokens": token},
+        {"$pull": {"tokens": token}}
+    )
+
+    return jsonify({"message": "Logged out successfully"})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
