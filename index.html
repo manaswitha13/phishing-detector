@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phishing Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin:0;
+            font-family: Arial;
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+        }
+
+        .container {
+            width:90%;
+            max-width:800px;
+        }
+
+        h1 {
+            color:white;
+            text-align:center;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.2);
+            padding:20px;
+            border-radius:10px;
+            margin:10px 0;
+            color:white;
+
+            position: relative;
+            z-index: 10;  /* 🔥 FIX CLICK ISSUE */
+        }
+
+        input {
+            width:100%;
+            padding:10px;
+            margin:10px 0;
+            border:none;
+            border-radius:5px;
+        }
+
+        button {
+            padding:10px;
+            margin:5px;
+            border:none;
+            background:#ff7b00;
+            color:white;
+            border-radius:5px;
+            cursor:pointer;
+        }
+
+        button:hover {
+            background:#ff9500;
+        }
+
+        .grid {
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🔐 Phishing Detector</h1>
+
+<div class="card" id="auth">
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="signup()">Signup</button>
+    <button onclick="login()">Login</button>
+</div>
+
+<div id="app" style="display:none;">
+    <div class="card">
+        <input id="urlInput" placeholder="Enter URL">
+        <button onclick="scan()">Scan</button>
+    </div>
+
+    <div id="result" class="card"></div>
+
+    <div class="grid">
+        <div class="card">
+            <button onclick="loadHistory()">History</button>
+            <ul id="history"></ul>
+        </div>
+
+        <div class="card">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <button onclick="logout()">Logout</button>
+    </div>
+</div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
