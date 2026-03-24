@@ -1,4 +1,4 @@
-const BASE_URL = "https://your-railway-url.up.railway.app";
+const BASE_URL = "https://phishing-detector-production-dc29.up.railway.app";
 
 // ✅ Load token if already logged in
 let authToken = localStorage.getItem("token") || "";
