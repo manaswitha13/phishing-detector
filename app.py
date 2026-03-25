@@ -4,24 +4,14 @@ from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import re
-import os
 
 app = Flask(__name__)
 CORS(app)
 
-# ✅ Use environment variable (Render best practice)
-MONGO_URI = os.environ.get("MONGO_URI")
-
-client = MongoClient(MONGO_URI)
+client = MongoClient("mongodb://localhost:27017/")
 db = client["phishing_db"]
 users = db["users"]
 scans = db["scans"]
-
-# ✅ Home route (fixes "Not Found")
-@app.route("/")
-def home():
-    return jsonify({"message": "Phishing Detector API is running 🚀"})
-
 
 # 🔍 Detection
 def detect_phishing(url):
@@ -63,16 +53,13 @@ def detect_phishing(url):
 def signup():
     data = request.get_json()
 
-    if not data or "username" not in data or "password" not in data:
-        return jsonify({"message": "Invalid input"}), 400
-
     if users.find_one({"username": data["username"]}):
         return jsonify({"message": "User already exists"}), 400
 
     users.insert_one({
         "username": data["username"],
         "password": generate_password_hash(data["password"]),
-        "tokens": []
+        "tokens": []   # ✅ multiple sessions support
     })
 
     return jsonify({"message": "Signup successful"})
@@ -82,12 +69,12 @@ def signup():
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
+    user = users.find_one({"username": data["username"]})
 
-    user = users.find_one({"username": data.get("username")})
-
-    if user and check_password_hash(user["password"], data.get("password")):
+    if user and check_password_hash(user["password"], data["password"]):
         token = str(uuid.uuid4())
 
+        # ✅ Add token instead of replacing
         users.update_one(
             {"username": data["username"]},
             {"$push": {"tokens": token}}
@@ -107,19 +94,12 @@ def login():
 def scan():
     token = request.headers.get("Authorization")
 
-    if not token:
-        return jsonify({"message": "Token missing"}), 401
-
-    user = users.find_one({"tokens": token})
+    user = users.find_one({"tokens": token})  # ✅ check in array
 
     if not user:
         return jsonify({"message": "Unauthorized"}), 401
 
     data = request.get_json()
-
-    if not data or "url" not in data:
-        return jsonify({"message": "URL missing"}), 400
-
     result = detect_phishing(data["url"])
 
     scans.insert_one({
@@ -136,9 +116,6 @@ def scan():
 def history():
     token = request.headers.get("Authorization")
 
-    if not token:
-        return jsonify({"message": "Token missing"}), 401
-
     user = users.find_one({"tokens": token})
 
     if not user:
@@ -148,13 +125,10 @@ def history():
     return jsonify(data)
 
 
-# 🚪 Logout
+# 🚪 Logout (NEW)
 @app.route("/logout", methods=["POST"])
 def logout():
     token = request.headers.get("Authorization")
-
-    if not token:
-        return jsonify({"message": "Token missing"}), 400
 
     users.update_one(
         {"tokens": token},
@@ -164,7 +138,5 @@ def logout():
     return jsonify({"message": "Logged out successfully"})
 
 
-# ✅ Deployment-ready
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
