@@ -1,4 +1,4 @@
-const BASE_URL = "https://phishing-detector-production-dc29.up.railway.app";
+const BASE_URL = "https://pd-tool.onrender.com";
 
 // ✅ Load token if already logged in
 let authToken = localStorage.getItem("token") || "";
