@@ -4,3 +4,5 @@ pymongo
 tldextract
 requests
 gunicorn
+pandas
+scikit-learn
